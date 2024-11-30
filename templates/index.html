@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Surface Crack Detection</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: #f4f4f4;
+        }
+        .container {
+            text-align: center;
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        form {
+            margin: 20px 0;
+        }
+        input[type="file"] {
+            padding: 10px;
+            margin: 10px 0;
+        }
+        button {
+            background: #007bff;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        img {
+            max-width: 100%;
+            margin-top: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 10px;
+            background: #e8f5e9;
+            border: 1px solid #a5d6a7;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Surface Crack Detection</h1>
+        <p>Upload an image to detect surface cracks and see the result.</p>
+        <form id="uploadForm" method="POST" enctype="multipart/form-data">
+            <input type="file" name="image" accept="image/*" required>
+            <br>
+            <button type="submit">Upload and Predict</button>
+        </form>
+        <div id="response"></div>
+        <img id="annotatedImage" src="" alt="" style="display: none;">
+    </div>
+
+    <script>
+        const form = document.getElementById('uploadForm');
+        const responseDiv = document.getElementById('response');
+        const annotatedImage = document.getElementById('annotatedImage');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const formData = new FormData(form);
+
+            try {
+                responseDiv.innerHTML = "Processing...";
+                annotatedImage.style.display = "none";
+
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                if (response.ok) {
+                    responseDiv.innerHTML = `
+                        <div class="result">
+                            <strong>Predictions:</strong>
+                            <ul>
+                                ${result.predictions.map(pred => `<li>${pred.label}: ${pred.confidence * 100}%</li>`).join('')}
+                            </ul>
+                        </div>
+                    `;
+                    annotatedImage.src = result.image_url;
+                    annotatedImage.style.display = "block";
+                } else {
+                    responseDiv.innerHTML = `<div class="error">Error: ${result.error || "Something went wrong"}</div>`;
+                }
+            } catch (err) {
+                responseDiv.innerHTML = `<div class="error">Error: Failed to connect to the server.</div>`;
+            }
+        });
+    </script>
+</body>
+</html>
